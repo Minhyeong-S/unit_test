@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const { isLoggedIn, isNotLoggedIn } = require('../middlewares/passport/local-login-middleware');
 const UserProvider = require('./user-provider');
 const User = require('../schemas/user');
+const { CostExplorer } = require('aws-sdk');
 
 const router = express.Router();
 
@@ -27,27 +28,53 @@ router.get('/api/auth/kakao/callback', /* loginMiddleware,*/ UserProvider.getKak
 router.post('/api/auth/kakao/callback', /* loginMiddleware,*/ UserProvider.getKakaoUserInfo);
 
 // 유저 정보 조회
-router.post('/api/user/:nickname', /* authMiddleware,*/ UserProvider.onlyGetPlayRecord);
+router.post('/api/user', /* authMiddleware,*/ UserProvider.onlyGetPlayRecord);
 
 // 일반 회원가입
 router.post('/api/join', isNotLoggedIn, async (req, res, next) => {
-    const { email, nickname, password } = req.body;
+    const { email, password } = req.body;
+    let newUser;
     try {
         const exUser = await User.findOne({ email });
         if (exUser) {
             return res.redirect('/join?error=exist');
         }
         const hash = await bcrypt.hash(password, 12);
-        await User.create({
-            email,
+
+        let nickNum, nickname, _id;
+        // DB에 유저가 하나도 없다면 초기값 세팅
+        const allUser = await User.find();
+        if (allUser.length === 0) {
+            _id = 1;
+            nickname = 'Agent_001';
+        } else {
+            const lastNum = allUser.slice(-1)[0]._id; // 마지막 document 의 nickname
+
+            let n = +lastNum + 1; // nickname 에서 Agent_ 뒷부분만 가져온 후 Number 변환
+            console.log(`n :: ${n}`);
+            // n이 1000이상이면 Agent_ 뒤에 그대로 붙이고, 1000보다 작으면 001 의 형태로 붙이기
+            if (n < 1000) {
+                nickNum = (0.001 * n).toFixed(3).toString().slice(2);
+                nickname = `Agent_${nickNum}`;
+            } else {
+                nickname = `Agent_${n}`;
+            }
+            _id = +nickNum;
+        }
+        // 위에서 만든 값으로 newUser DB 에 저장하기
+        const newUser = await User.create({
+            _id,
             nickname,
+            email,
             password: hash,
         });
+
+        console.log(`newUser :: ${newUser}`);
     } catch (e) {
         console.error(e);
         return next(e);
     }
-    res.render('join', { title: '회원가입 - WeAllLie' });
+    res.status(201).send(newUser);
 });
 
 // 일반 로그인

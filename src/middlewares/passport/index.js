@@ -2,7 +2,6 @@ const passport = require('passport');
 const local = require('./local-strategy');
 const kakao = require('./kakao-stratege');
 const User = require('../../schemas/user');
-const jwtService = require('../../users/jwt');
 require('dotenv').config();
 
 module.exports = () => {

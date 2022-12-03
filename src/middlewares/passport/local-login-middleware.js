@@ -19,5 +19,5 @@ exports.isNotLoggedIn = (req, res, next) => {
 // 로그인 여부 확인하기
 (Passport 가 req 객체에 isAuthenticated 메서드를 추가한다.)
 - 로그인 중 : isAuthenticated() = true
-- 로그아웃 상태 : isAuthenticated() = false\
+- 로그아웃 상태 : isAuthenticated() = false
 */

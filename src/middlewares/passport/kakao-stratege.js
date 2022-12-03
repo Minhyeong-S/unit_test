@@ -35,12 +35,16 @@ module.exports = () =>
         */
 
                 // 1. DB에 존재하는 유저인지 확인하기 (일단 가져오는 profile 정보 )
+                /*
                 // user 스키마에 snsId, provider 추가 필요
                 const exUser = await User.findOne({
                     snsId: profile.id,
                     provider: 'kakao',
                 });
-
+                */
+                const exUser = await User.findOne({
+                    email: profile._json.kakao_account.email,
+                });
                 // 2. 이미 가입된 카카오 프로필이면 성공
                 if (exUser) {
                     console.log('여기는 kakaoStratege에서 가져온 profile의 정보가 DB에 있을 때!!');
