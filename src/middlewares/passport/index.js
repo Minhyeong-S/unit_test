@@ -7,12 +7,12 @@ require('dotenv').config();
 module.exports = () => {
     passport.serializeUser((user, done) => {
         console.log('/passport/index.js serializeUser');
-        console.log('user :::', user.nickname);
+        console.log('user :::', user.nickname); // 여기에 명시한 값이 req.session.passport에 user라는 이름으로 들어간다.
         done(null, user.nickname);
     });
 
     passport.deserializeUser((nickname, done) => {
-        console.log('/passport/index.js DDDDDeserializeUser');
+        console.log('/passport/index.js DeserializeUser');
         console.log(`닉네임 전달 받음? :::>> ${nickname}`);
         User.findOne({ nickname })
             .then((user) => {

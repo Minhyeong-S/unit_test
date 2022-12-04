@@ -1,10 +1,9 @@
 const express = require('express');
 const passport = require('passport');
 const bcrypt = require('bcrypt');
-const { isLoggedIn, isNotLoggedIn } = require('../middlewares/passport/local-login-middleware');
+const { isLoggedIn, isNotLoggedIn } = require('../middlewares/local-login');
 const UserProvider = require('./user-provider');
 const User = require('../schemas/user');
-const { CostExplorer } = require('aws-sdk');
 
 const router = express.Router();
 
@@ -12,7 +11,7 @@ const router = express.Router();
 // const loginMiddleware = require('../middlewares/login-middleware');
 // const authMiddleware = require('../middlewares/auth-middleware');
 
-// 넌적스에서 user 객체를 통해 사용자 정보에 접근할 수 있다 ? 이게 무슨 말 ?
+// 넌적스에서 user 객체를 통해 사용자 정보에 접근할 수 있다 ? 프론트에서 유저 정보 접근할 수 있다는 말인가?
 router.use((req, res, next) => {
     res.locals.user = req.user;
     res.locals.followerCount = 0;
@@ -28,12 +27,11 @@ router.get('/api/auth/kakao/callback', /* loginMiddleware,*/ UserProvider.getKak
 router.post('/api/auth/kakao/callback', /* loginMiddleware,*/ UserProvider.getKakaoUserInfo);
 
 // 유저 정보 조회
-router.post('/api/user', /* authMiddleware,*/ UserProvider.onlyGetPlayRecord);
+router.get('/api/user', isLoggedIn, /* authMiddleware,*/ UserProvider.onlyGetPlayRecord);
 
 // 일반 회원가입
 router.post('/api/join', isNotLoggedIn, async (req, res, next) => {
     const { email, password } = req.body;
-    let newUser;
     try {
         const exUser = await User.findOne({ email });
         if (exUser) {
@@ -70,11 +68,11 @@ router.post('/api/join', isNotLoggedIn, async (req, res, next) => {
         });
 
         console.log(`newUser :: ${newUser}`);
+        return res.send('회원가입 성공');
     } catch (e) {
         console.error(e);
         return next(e);
     }
-    res.status(201).send(newUser);
 });
 
 // 일반 로그인
@@ -98,9 +96,11 @@ router.post('/api/login', isNotLoggedIn, (req, res, next) => {
 });
 
 // 로그아웃
-router.get('/logout', isLoggedIn, (req, res) => {
+router.post('/api/logout', isLoggedIn, (req, res) => {
     req.logout();
+    console.log('res.locals.user ::', res.locals.user);
     req.session.destroy();
+    console.log('req.session ::', req.session);
     res.redirect('/');
 });
 

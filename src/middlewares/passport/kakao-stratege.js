@@ -1,7 +1,6 @@
 const KakaoStrategy = require('passport-kakao').Strategy;
 const passport = require('passport');
 const User = require('../../schemas/user');
-const jwtService = require('../../users/jwt');
 const path = require('path');
 const dotenv = require('dotenv');
 dotenv.config({ path: path.join(__dirname, '/../../../.env') });
@@ -27,21 +26,8 @@ module.exports = () =>
                 );
                 console.log('----------------------------');
 
-                /* 출력결과
-        profile.id ::: 248339847
-        profile.username ::: 닉네임
-        profile._json.connected_at ::: 2022-11-10T01:02:16Z
-        profile._json.kakao_account.email ::: asdfasdf11@kakao.com
-        */
-
                 // 1. DB에 존재하는 유저인지 확인하기 (일단 가져오는 profile 정보 )
-                /*
-                // user 스키마에 snsId, provider 추가 필요
-                const exUser = await User.findOne({
-                    snsId: profile.id,
-                    provider: 'kakao',
-                });
-                */
+
                 const exUser = await User.findOne({
                     email: profile._json.kakao_account.email,
                 });

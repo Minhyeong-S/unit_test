@@ -4,6 +4,8 @@ const jwtService = require('./jwt');
 require('dotenv').config();
 
 class UserProvider {
+    /* 
+    // 현재 미사용
     kakaoCallback = async (req, res) => {
         // 카카오 Strategy에서 성공한다면 콜백 실행 (패스포트 사용시)
         // 토큰 생성 및 유저 정보 가공해서 전달하기
@@ -24,6 +26,7 @@ class UserProvider {
         res.header('Access-Control-Allow-Origin', '*');
         res.status(200).redirect('/user/kakao');
     };
+    */
 
     getKakaoToken = async (req, res) => {
         console.log('-------------------------------------------');

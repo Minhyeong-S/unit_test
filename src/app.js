@@ -22,6 +22,7 @@ const option = {
 const https = HTTPS.createServer(option, app);
 */
 // middlewares
+passportConfig();
 app.use(function (req, res, next) {
     res.set({
         'Access-Control-Allow-Credentials': true,
@@ -37,13 +38,17 @@ app.use(
         origin: '*',
     })
 );
-app.use(logger('dev'));
+app.use(
+    logger(
+        ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"  - :response-time ms'
+    )
+);
+// app.use(logger('dev'));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-// passport
+
 // Node 서버가 프록시 뒤에 있다면 app.use(session({}))을 하기 전에 app.set('trust proxy', 1)을 설정해주는 게 필요하다고 한다.
-passportConfig();
 app.use(
     session({
         name: 'sessionId',
