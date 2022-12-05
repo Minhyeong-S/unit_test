@@ -1,7 +1,17 @@
 const UserRepo = require('./user-repo');
-const jwtService = require('./jwt');
-// const redis = require('../redis');
+const jwtService = require('./util/jwt');
+const bcrypt = require('bcrypt');
+const Joi = require('joi');
 require('dotenv').config();
+
+const re_email =
+    /^[A-Za-z0-9]([-_\.]?[0-9a-zA-z])*@[0-9a-zA-Z]([-_\.]?[0-9a-zA-z])*\.[a-zA-z]{2,3}$/;
+const re_password = /^[a-zA-Z0-9]{4,16}$/;
+
+const userSchema = Joi.object({
+    email: Joi.string().pattern(re_email).required(),
+    password: Joi.string().pattern(re_password).required(),
+});
 
 class UserProvider {
     /* 
@@ -119,6 +129,60 @@ class UserProvider {
         } catch (e) {
             console.log(e);
             return res.status(400).json({ error: e.message });
+        }
+    };
+
+    localSignUp = async (req, res, next) => {
+        try {
+            const { email, password } = await userSchema.validateAsync(req.body).catch((error) => {
+                // joi error msg
+                const joiError = error.details[0].message.split('with')[0].replace(/"/g, '');
+                throw new Error(`${joiError}형식을 확인해주세요`);
+            });
+
+            const exUser = await UserRepo.findOneByEmail(email);
+            console.log(email, password);
+            if (exUser) {
+                throw new Error('이메일 중복');
+            }
+
+            let newUser = {};
+            newUser.email = email;
+            newUser.password = await bcrypt.hash(password, 12);
+
+            // DB에 유저가 하나도 없다면 초기값 세팅
+            const allUser = await UserRepo.findAllUser();
+            const allUserCount = allUser.length;
+
+            if (allUserCount === 0) {
+                newUser._id = 1;
+                newUser.nickname = 'Agent_001';
+            } else {
+                // 마지막 유저의 _id 값 + 1
+                // 유저 배열의 length를 구하는 과정을 생략하기 위해 allUser.slice(-1)[0] 을 사용했었으나,
+                // 어짜피 유저가 없는 상태인지 판단하기 위해 바로 위에서 allUser.length를 받아오고 있어서 의미가 없다고 판단
+                // 해당 값을 재사용하는 것이 더 효율적일 것 같아 수정
+                const n = +allUser[allUserCount - 1]._id + 1;
+                console.log(`n :: ${n}`);
+                // n이 1000이상이면 Agent_ 뒤에 그대로 붙이고, 1000보다 작으면 001 의 형태로 붙이기
+                if (n < 1000) {
+                    let nickNum = (0.001 * n).toFixed(3).toString().slice(2);
+                    newUser.nickname = `Agent_${nickNum}`;
+                } else {
+                    newUser.nickname = `Agent_${n}`;
+                }
+                newUser._id = +n;
+            }
+
+            console.log('newUser ::', newUser);
+            // 위에서 만든 값으로 newUser DB 에 저장하기
+            const newUserInfo = await UserRepo.localSingUp(newUser);
+
+            console.log(`newUser :: ${newUserInfo}`);
+            return res.json({ msg: '회원가입 성공', newUserInfo });
+        } catch (e) {
+            console.error(e);
+            return next(e);
         }
     };
 

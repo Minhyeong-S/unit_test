@@ -25,6 +25,10 @@ class UserRefo {
         return exUser;
     };
 
+    localSingUp = async (newUser) => {
+        return await User.create(newUser);
+    };
+
     getKakaoToken = async (code) => {
         const kakaoToken = await axios({
             method: 'POST',
@@ -183,15 +187,23 @@ class UserRefo {
     };
 
     createNewUser = async (kakaoUserInfo, allUser) => {
+        const allUserCount = allUser.length;
         let nickNum, nickname, _id;
+
         // DB에 유저가 하나도 없다면 초기값 세팅
-        if (allUser.length === 0) {
+        if (allUserCount === 0) {
             _id = 1;
             nickname = 'Agent_001';
         } else {
             // DB에 유저가 있을 경우
-            const lastNum = allUser.slice(-1)[0].nickname; // 마지막 document 의 nickname
-            let n = +lastNum.slice(6) + 1; // nickname 에서 Agent_ 뒷부분만 가져온 후 Number 변환
+            /*
+            마지막 유저의 _id 값 + 1
+            유저 배열의 length를 구하는 과정을 생략하기 위해 allUser.slice(-1)[0] 을 사용했었으나,
+            어짜피 유저가 없는 상태인지 판단하기 위해 바로 위에서 allUser.length를 받아오고 있어서 의미가 없다고 판단
+            해당 값을 재사용하는 것이 더 효율적일 것 같아 수정
+            */
+            const n = +allUser[allUserCount - 1]._id + 1;
+            console.log(`n :: ${n}`);
             // n이 1000이상이면 Agent_ 뒤에 그대로 붙이고, 1000보다 작으면 001 의 형태로 붙이기
             if (n < 1000) {
                 nickNum = (0.001 * n).toFixed(3).toString().slice(2);

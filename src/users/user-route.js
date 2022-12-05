@@ -1,9 +1,7 @@
 const express = require('express');
 const passport = require('passport');
-const bcrypt = require('bcrypt');
-const { isLoggedIn, isNotLoggedIn } = require('../middlewares/local-login');
 const UserProvider = require('./user-provider');
-const User = require('../schemas/user');
+const { isLoggedIn, isNotLoggedIn } = require('../middlewares/local-login');
 
 const router = express.Router();
 
@@ -30,50 +28,7 @@ router.post('/api/auth/kakao/callback', /* loginMiddleware,*/ UserProvider.getKa
 router.get('/api/user', isLoggedIn, /* authMiddleware,*/ UserProvider.onlyGetPlayRecord);
 
 // 일반 회원가입
-router.post('/api/join', isNotLoggedIn, async (req, res, next) => {
-    const { email, password } = req.body;
-    try {
-        const exUser = await User.findOne({ email });
-        if (exUser) {
-            return res.redirect('/join?error=exist');
-        }
-        const hash = await bcrypt.hash(password, 12);
-
-        let nickNum, nickname, _id;
-        // DB에 유저가 하나도 없다면 초기값 세팅
-        const allUser = await User.find();
-        if (allUser.length === 0) {
-            _id = 1;
-            nickname = 'Agent_001';
-        } else {
-            const lastNum = allUser.slice(-1)[0]._id; // 마지막 document 의 nickname
-
-            let n = +lastNum + 1; // nickname 에서 Agent_ 뒷부분만 가져온 후 Number 변환
-            console.log(`n :: ${n}`);
-            // n이 1000이상이면 Agent_ 뒤에 그대로 붙이고, 1000보다 작으면 001 의 형태로 붙이기
-            if (n < 1000) {
-                nickNum = (0.001 * n).toFixed(3).toString().slice(2);
-                nickname = `Agent_${nickNum}`;
-            } else {
-                nickname = `Agent_${n}`;
-            }
-            _id = +nickNum;
-        }
-        // 위에서 만든 값으로 newUser DB 에 저장하기
-        const newUser = await User.create({
-            _id,
-            nickname,
-            email,
-            password: hash,
-        });
-
-        console.log(`newUser :: ${newUser}`);
-        return res.send('회원가입 성공');
-    } catch (e) {
-        console.error(e);
-        return next(e);
-    }
-});
+router.post('/api/signup', isNotLoggedIn, UserProvider.localSignUp);
 
 // 일반 로그인
 router.post('/api/login', isNotLoggedIn, (req, res, next) => {
